@@ -1,11 +1,15 @@
-import React, { Component } from 'react'
-import axios from 'axios'
+import React, { Component } from 'react';
+import axios from 'axios';
 import ReactTable from 'react-table';
-import 'react-table/react-table.css'
-import { BrowserRouter as Router, Switch, Route } from "react-router-dom"
-import Header from './component/Header'
-import Footer from './component/Footer'
-import About from './Views/About'
+import 'react-table/react-table.css';
+import Select from 'react-select';
+
+
+import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
+import Header from './component/Header';
+import Footer from './component/Footer';
+import About from './Views/About';
+
 
 
 export default class App extends Component {
@@ -14,98 +18,166 @@ export default class App extends Component {
     this.state = {
       products: [],
       loading: true,
-      subCategory: '',
+      filtered: [],
+      select: null
     }
   };
+
+  //getting data from the API
   async getUsersData() {
     const res = await axios.get('http://app.getrecall.com:8080/products')
-    console.log(res.data)
     this.setState({ loading: false, products: res.data.products })
   };
   componentDidMount() {
     this.getUsersData()
   };
+
+  //feltring data by category
+  onFilteredChangeCustom(value, accessor) {
+    console.log("The value is " + value);
+    let filtered = this.state.filtered;
+    console.log("the filtered items" + JSON.stringify(this.state.filtered));
+    let insertNewFilter = 1;
+
+    if ( filtered.length) {
+      console.log("filtered.length " + filtered.length);
+      filtered.forEach((filter, i) => {
+        if (filter["id"] === accessor) {
+          if (value === "" || !value.length) filtered.splice(i, 1);
+          else filter["value"] = value;
+
+          insertNewFilter = 0;
+        }
+      });
+    }
+
+    if (insertNewFilter) {
+      filtered.push({ id: accessor, value: value });
+    }
+
+    this.setState({ filtered: filtered });
+    console.log("The filtered data is " + JSON.stringify(this.state.filtered));
+  }
+
+  //removing duplicated value of category for the react select
+  uniqueOptions = (objectsArray, objectKey) => {
+    var a = objectsArray.map((o, i) => {
+      return o[objectKey];
+    });
+
+    return a.filter(function (i, index) {
+      return a.indexOf(i) >= index;
+    });
+  };
+
   
   render() {
-    console.log(this.state.products)
+
+    //defining the clolumns for our table
     const columns = [
     {
       Header: 'Image',
         accessor: 'thumbnail',
-        Cell: e => <img src={e.value} /> 
+        width: 200,
+        Cell: e => <img src={e.value} alt=''  /> 
     },
     {
       Header: 'Name',
       accessor: 'name',
-      style: { 'whiteSpace': 'unset' },
-      Cell: row => (
-        <div style={{ textAlign: "center" }}>{row.value}</div>
-      )
+      style: { 'whiteSpace': 'unset', 'textAlign': 'center' },
+      
     },
     {
       Header: 'description',
       accessor: 'description',
-      style: { 'whiteSpace': 'unset' },
-      Cell: row => (
-        <div style={{ textAlign: "center" }}>{row.value}</div>
-      )
+      style: { 'whiteSpace': 'unset', 'textAlign': 'center' },
+      width: 210
     },
     {
       Header: 'category',
       accessor: 'category',
-      style: { 'whiteSpace': 'unset' },
-      Cell: row => (
-        <div style={{ textAlign: "center" }}>{row.value}</div>
-      )
+      style: { 'whiteSpace': 'unset', 'textAlign': 'center' },
     },
 
       {
         Header: 'features',
         accessor: 'features',
         style: { 'whiteSpace': 'unset'},
-        Cell: row => (
-          <div style={{ textAlign: "center" }}>{row.value}</div>
-        )
+        width: 350
+       
       },
 
       {
         Header: 'Download specification PDF',
         accessor: 'datasheet',
-        style: { 'whiteSpace': 'unset' },
-        Cell: row => (
-          <div style={{ textAlign: "center" }}>{row.value}</div>
-        ),
-        Cell: e => <a href={e.value}> {e.value} </a>
+        style: { 'whiteSpace': 'unset', "textAlign": "center" },
+        Cell: e => <a href={e.value}> {e.value} </a>,
+        width: 200
       },
 
       {
-        Header: 'Click in Link for more details',
+        Header: 'For more details visite',
         accessor: 'link',
-        style: { 'whiteSpace': 'unset' },
-        Cell: row => (
-          <div style={{ textAlign: "center" }}>{row.value}</div>
-        ),
-        Cell: e => <a href={e.value}> {e.value} </a>
+        style: { 'whiteSpace': 'unset', "textAlign": "center" },
+        Cell: e => <a href={e.value}> {e.value} </a>,
+        width: 200
       },
 
     ]
+    
     return (
       <div className="relative pb-10 min-h-screen">
         <Router>
-
           <Header />
-
-          <div>filter</div>
-    
           <div className="p-3">
             <Switch>
               <Route exact path="/">
-                <ReactTable data={this.state.products}
-                  columns={columns} />
+                
+               <h1>Filter By category :{" "}</h1>
+               <div>
+                 
+                  {/* feltring section*/}
+                  <Select
+                    isMulti
+                    style={{ width: "50%", marginBottom: "20px" }}
+                    onChange={(entry) => {
+                      this.setState({ select: entry });
+                      this.onFilteredChangeCustom(entry.map(o => {
+                        return o.value
+                      }), "category");
+                    }}
+                    value={this.state.products.select}
+                    options={this.uniqueOptions(this.state.products, "category").map((category, i) => {
+                      return { id: i, value: category, label: category };
+                    })}
+
+                    theme={theme => ({
+                      ...theme,
+                      borderRadius: 0,
+                      colors: {
+                        ...theme.colors,
+
+                      },
+                    })}
+                  />
+               </div>
+                
+                {/* react table section*/}
+                <ReactTable 
+                  data={this.state.products}
+                  filtered={this.state.filtered}
+                  columns={columns} 
+                  style={{
+                    height: "550px" // This will force the table body to overflow and scroll, since there is not enough room
+                  }}
+                  className="-striped -highlight"
+                />
               </Route>
+
               <Route path="/about">
                 <About />
               </Route>
+
             </Switch>
           </div>
 
@@ -116,4 +188,5 @@ export default class App extends Component {
     )
   }
 }
+
 

@@ -5,7 +5,7 @@ function Header(){
     return(
         <header className="border-b p-3 flex justify-between item-center">
             <span className="font-bold">
-                appName
+                Matious Test
             </span>
 
             <Navigation/>

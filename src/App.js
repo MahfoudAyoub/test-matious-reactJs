@@ -25,7 +25,7 @@ export default class App extends Component {
 
   //getting data from the API
   async getUsersData() {
-    const res = await axios.get('http://app.getrecall.com:8080/products')
+    const res = await axios.get('https://app.getrecall.com/api/products')
     this.setState({ loading: false, products: res.data.products })
   };
   componentDidMount() {

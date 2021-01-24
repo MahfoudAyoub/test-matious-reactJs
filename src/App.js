@@ -147,7 +147,7 @@ export default class App extends Component {
                       }), "category");
                     }}
                     value={this.state.products.select}
-                    {/* getting all categories*/}
+                    /* getting all categories*/
                     options={this.uniqueOptions(this.state.products, "category").map((category, i) => {
                       return { id: i, value: category, label: category };
                     })}
